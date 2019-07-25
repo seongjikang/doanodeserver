@@ -9,6 +9,6 @@ router.get('/:id', userContoroller.show);
 
 router.delete('/:id', userContoroller.destroy);
 
-router.post('/', userContoroller.create);
+router.post('/', userContoroller.create);   
 
 module.exports = router;
