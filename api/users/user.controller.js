@@ -47,6 +47,8 @@ exports.destroy = (req, res) => {
     res.status(204).send();
 
 };
+
+
   
 exports.create = (req, res) => {
     const name = req.body.name || '';
