@@ -5,7 +5,7 @@ const restContoroller = require('./rest.controller');
 
 router.get('/', restContoroller.index);
 
-router.get('/user', restContoroller.index);
+router.get('/userme/:user', restContoroller.userme);
 
 router.get('/callback', restContoroller.callback);
 

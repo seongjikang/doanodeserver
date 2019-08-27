@@ -3,3 +3,16 @@
 > node app.js
 
 Example app listening on port 3000!
+52469:C 27 Aug 2019 15:45:29.792 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+52469:C 27 Aug 2019 15:45:29.792 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=52469, just started
+52469:C 27 Aug 2019 15:45:29.792 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+52469:M 27 Aug 2019 15:45:29.793 * Increased maximum number of open files to 10032 (it was originally set to 256).
+52469:M 27 Aug 2019 15:45:29.794 * Running mode=standalone, port=6379.
+52469:M 27 Aug 2019 15:45:29.794 # Server initialized
+52469:M 27 Aug 2019 15:45:29.794 * DB loaded from disk: 0.000 seconds
+52469:M 27 Aug 2019 15:45:29.794 * Ready to accept connections
+52469:signal-handler (1566888333) Received SIGINT scheduling shutdown...
+52469:M 27 Aug 2019 15:45:33.797 # User requested shutdown...
+52469:M 27 Aug 2019 15:45:33.797 * Saving the final RDB snapshot before exiting.
+52469:M 27 Aug 2019 15:45:33.799 * DB saved on disk
+52469:M 27 Aug 2019 15:45:33.799 # Redis is now ready to exit, bye bye...
