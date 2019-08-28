@@ -89,3 +89,5 @@ typings/
 
 # VSCode
 .vscode/
+
+dump.rdb
