@@ -30,32 +30,28 @@ exports.index = (req, res) => {
  * 초대 코드 발급
  * METHOD: GET
  * INPUT: hpno
- * OUTPUT: time, token, user_seq_no
- *          time: 현재시간
- *          token: 모임 토큰
- *          user_seq_no: 모임 번호
+ * OUTPUT: result, code
+ *          result: 결과 메시지
+ *          code: 초대 코드
  */
 exports.invite = (req, res) => {
     const hpno = req.params.hpno;
-    console.log("hpno = " + hpno);
-    if (!hpno) console.log("hpno is none")
+    if (!hpno) console.log("hpno is none");
 
     hgetRData("mng_access_token", hpno, function(data) {
         if (data) {
             moment.tz.setDefault("Asia/Seoul"); 
             var date = moment().format('YYYY.MM.DD HH:mm:ss'); 
-            console.log(data);
             var recvData = JSON.parse(data);
             var access_token = recvData.access_token;
             var user_seq_no = recvData.user_seq_no;
 
-            var second = 30;
+            var second = 180;
             var key = access_token.substring(access_token.length - 6, access_token.length);
             var value = {
                 hpno: hpno,
                 user_seq_no: user_seq_no
             }
-            console.log(value);
             setexRData(key, second, JSON.stringify(value));
 
             var result = {
@@ -69,25 +65,38 @@ exports.invite = (req, res) => {
     });
 }
 
+/**
+ * 초대 코드 검증
+ * METHOD: POST
+ * INPUT: code
+ * OUTPUT: result, hpno, user_seq_no
+ *          result: 결과 메세지
+ *          hpno: 모임주 번호
+ *          user_seq_no: 모임 번호
+ */
 exports.check = (req, res) => {
     const code = req.body.code || ''; // 모임주 번호
+    console.log("code = " + code);
 
     if (!code.length) return res.status(400).json({result: "09"}); // 클라이언트 코드 입력 안됨
     getRData(code, function(data) {
-        if (!data) res.json({result: "01"}); // 초대 코드 만료
-        data = JSON.parse(data);
-        var recvData = {
-            result: "00",
-            hpno: data.hpno,
-            user_seq_no: data.user_seq_no
+        if (!data) {
+            return res.json({result: "01"}); // 초대 코드 만료
+        } else {
+            data = JSON.parse(data);
+            var recvData = {
+                result: "00",
+                hpno: data.hpno,
+                user_seq_no: data.user_seq_no
+            }
+            return res.json(recvData);
         }
-        return res.json(recvData);
     });
 }
 /**
  * 초대 코드 승인
  * METHOD: POST
- * INPUT: hpno1, hpno2, token, user_seq_no
+ * INPUT: hpno1, hpno2, user_seq_no
  * OUTPUT: result
  *          00: 성공
  *          01: 코드 만료
@@ -97,6 +106,10 @@ exports.agree = (req, res) => {
     const hpno1 = req.body.hpno1 || ''; // 모임주 번호
     const hpno2 = req.body.hpno2 || ''; // 모임원 번호
     const user_seq_no = req.body.user_seq_no || ''; // 모임 번호
+
+    console.log("hpno1 = " + hpno1);
+    console.log("hpno2 = " + hpno2);
+    console.log("user_seq_no = " + user_seq_no);
 
     if (!hpno1.length || !hpno2.length || !user_seq_no.length) {
         return res.status(400).json({error: 'Incorrenct param'});
@@ -112,19 +125,69 @@ exports.agree = (req, res) => {
         var recvData = "";
 
         if (data) {
-            console.log(data);
+            // console.log(data);
             recvData = JSON.parse(data);
             recvData.push(groupData);
         } else {
             recvData = groupData;
         }
-        console.log(recvData);
-        console.log(JSON.stringify(recvData));
+        // console.log(recvData);
+        // console.log(JSON.stringify(recvData));
 
         hsetRdata("mng_group", hpno2, JSON.stringify(recvData));
         res.status(200).json({result: "00"});
     });
 }
+
+/**
+ * 메인화면 대표계좌 보여주기
+ * METHOD: GET
+ * INPUT: hpno
+ * OUTPUT: result, 
+ *          00: 정상
+ *          09: 계좌보유 0개
+ * 
+ */
+exports.getMyGroup = (req, res) => {
+    const hpno = req.params.hpno;
+    if (!hpno) console.log("hpno is none");
+
+    hgetRData("mng_group", hpno, function(data) {
+        if (!data) res.json({result: "09"});
+
+        data = JSON.parse(data);
+        // console.log(data + ", " + data.length);
+
+        // for (var attr in data) console.log(attr);
+
+        for (var i = 0; i < data.length; i++) {
+            console.log(data[i].user_seq_no);
+        }
+        res.json({result: "00"})
+    });
+}
+
+function setSampleAccount() {
+    var sample = [
+        {
+            user_seq_no: "",
+            accountName: "테크랩5조 테스트1",
+            accountType: "모임통장",
+            accountNo: "3333-12-9373019",
+            koreaBalacne: "10000000",
+            foreignBalance: "5000"
+        },
+        {
+            user_seq_no: "",
+            accountName: "테크랩5조 테스트2",
+            accountType: "모임통장",
+            accountNo: "3333-18-4392043",
+            koreaBalacne: "10000000",
+            foreignBalance: "5000"
+        }
+    ]
+}
+
 
 exports.userme = (req, res) => {
     const user = parseInt(req.params.user, 10);
