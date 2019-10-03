@@ -6,6 +6,8 @@ const client = redis.createClient(6379, '127.0.0.1');
 const JSON = require('JSON');
 
 const request = require('request');
+var moment = require('moment');
+require('moment-timezone');
 
 exports.index = (req, res) => {
     req.accepts('application/json');
@@ -24,11 +26,116 @@ exports.index = (req, res) => {
     });
 };
 
+/**
+ * 초대 코드 발급
+ * METHOD: GET
+ * INPUT: hpno
+ * OUTPUT: time, token, user_seq_no
+ *          time: 현재시간
+ *          token: 모임 토큰
+ *          user_seq_no: 모임 번호
+ */
+exports.invite = (req, res) => {
+    const hpno = req.params.hpno;
+    console.log("hpno = " + hpno);
+    if (!hpno) console.log("hpno is none")
+
+    hgetRData("mng_access_token", hpno, function(data) {
+        if (data) {
+            moment.tz.setDefault("Asia/Seoul"); 
+            var date = moment().format('YYYY.MM.DD HH:mm:ss'); 
+            console.log(data);
+            var recvData = JSON.parse(data);
+            var access_token = recvData.access_token;
+            var user_seq_no = recvData.user_seq_no;
+
+            var second = 30;
+            var key = access_token.substring(access_token.length - 6, access_token.length);
+            var value = {
+                hpno: hpno,
+                user_seq_no: user_seq_no
+            }
+            console.log(value);
+            setexRData(key, second, JSON.stringify(value));
+
+            var result = {
+                result: "00",
+                hpno: hpno,
+            }
+            res.json(result);
+        } else {
+            res.json({result: "01"});
+        }
+    });
+}
+
+exports.check = (req, res) => {
+    const code = req.body.code || ''; // 모임주 번호
+
+    if (!code.length) return res.status(400).json({result: "09"}); // 클라이언트 코드 입력 안됨
+    getRData(code, function(data) {
+        if (!data) res.json({result: "01"}); // 초대 코드 만료
+        var recvData = {
+            result: "00",
+            hpno: data
+        }
+        return res.json(recvData);
+    });
+}
+/**
+ * 초대 코드 검증
+ * METHOD: POST
+ * INPUT: hpno1, hpno2, token, user_seq_no
+ * OUTPUT: result
+ *          00: 성공
+ *          01: 코드 만료
+ *          02: 서버 에러
+ */
+exports.agree = (req, res) => {
+    const hpno1 = req.body.hpno1 || ''; // 모임주 번호
+    const hpno2 = req.body.hpno2 || ''; // 모임원 번호
+    const user_seq_no = req.body.user_seq_no || ''; // 모임 번호
+
+    if (!hpno1.length || !hpno2.length || !token.length) {
+        return res.status(400).json({error: 'Incorrenct param'});
+    }
+
+    var key = "temp_" + hpno1;
+    getRData(key, function(data) {
+        if (data) {
+            hgetRData("mng_group", hpno2, function(data) {
+                var groupData = {
+                    "status": "N",
+                    "user_seq_no": user_seq_no
+                };
+
+                var inputData = "";
+
+                if (data) {
+                    var recvData = JSON.parse(data);
+                    recvData.push(groupData);
+                    // groupData = JSON.stringify(data) + ", " + JSON.stringify(groupData);
+                }
+
+
+
+                hsetRdata("mng_group", hpno2, groupData);
+                res.status(200).json({result: "00"});
+            });
+
+            
+        } else {
+            res.json({result: "01"});
+        }
+    });
+    
+    
+}
+
 exports.userme = (req, res) => {
     const user = parseInt(req.params.user, 10);
     if (!user) {
         console.log("user is none")
-        user = "1100035016";
     }
 
     hgetRData("mng_access_token", "01054103368", function(data) {
@@ -131,7 +238,7 @@ function getToken(token_code) {
             
             // console.log(res.statusCode);
             var json_body = JSON.parse(body);
-            hsetRdata("mng_access_token", "01054103368", JSON.stringify(json_body));
+            hsetRdata("mng_access_token", "01054103368", JSON.stringify(json_body)); // 승민: 01063137806, 낙진: 01054103368
         });
     }
 }
@@ -150,7 +257,7 @@ function getRData(key, callback) {
 
 // Redis 단일 데이터 set
 function setRData(key, val) {
-    client.set(key, val, redis.print);    
+    client.set(key, val, redis.print);
 }
 
 // Redis JSON 데이터 get
@@ -158,7 +265,8 @@ function setRData(key, val) {
 function hgetRData(key, field, callback) {
     client.hget(key, field, function(err, obj) {
         if (err) console.log(err);
-        var res = JSON.parse(obj);
+        // var res = JSON.parse(obj);
+        var res = obj;
         callback(res);
     });
 }
@@ -167,4 +275,8 @@ function hgetRData(key, field, callback) {
 // Key와 Field에 val(json)을 저장
 function hsetRdata(key, field, val) {
     client.hset(key, field, val);
+}
+
+function setexRData(key, second, val) {
+    client.setex(key, second, val, redis.print);
 }

@@ -1,0 +1,34 @@
+서버 주소(AWS)
+13.209.64.97:3000
+
+
+Slack
+workspace: shbtectlab
+
+
+API
+추후에 URL 변경이 필요함,
+반드시 정리가 필요함.
+
+- 초대 코드 
+    + 발급
+        METHOD: GET
+        URL: /rest/invite
+        PARAM: 
+
+
+    + 검증
+        METHOD: POST
+        URL: /rest/invite
+        PARAM: 
+
+
+REDIS KEY 정리
+- Access Token 및 User Seq No 관리
+    + mng_access_token 전화번호 
+
+- 모임 통장 관리
+    + mng_group user_seq_no
+
+- 초대 코드 관리
+    + temp_전화번호
