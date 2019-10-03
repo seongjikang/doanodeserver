@@ -32,3 +32,10 @@ REDIS KEY 정리
 
 - 초대 코드 관리
     + temp_전화번호
+
+
+- 백업용 쿼리
+hset mng_group 01063137806 '[{"status":"M", "user_seq_no":"1100035285"}]'
+hset mng_group 01054103368 '[{"status":"M", "user_seq_no":"1100035094"}]'
+hset mng_access_token 01063137806 "{\"access_token\":\"749f7a05-cbd2-42c4-a58c-82cb103b5822\",\"token_type\":\"Bearer\",\"expires_in\":7776000,\"refresh_token\":\"127f6454-56cb-4728-b6f0-26640f6aa124\",\"scope\":\"login transfer inquiry\",\"user_seq_no\":\"1100035285\"}"
+hset mng_access_token 01054103368 "{\"access_token\":\"9f839a33-8699-4864-83c9-b6d4f2eb2c5c\",\"token_type\":\"Bearer\",\"expires_in\":7776000,\"refresh_token\":\"8422e794-81aa-473b-a8d5-40c6dccce633\",\"scope\":\"login transfer inquiry\",\"user_seq_no\":\"1100035094\"}"

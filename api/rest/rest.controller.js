@@ -85,7 +85,7 @@ exports.check = (req, res) => {
     });
 }
 /**
- * 초대 코드 검증
+ * 초대 코드 승인
  * METHOD: POST
  * INPUT: hpno1, hpno2, token, user_seq_no
  * OUTPUT: result
@@ -98,40 +98,32 @@ exports.agree = (req, res) => {
     const hpno2 = req.body.hpno2 || ''; // 모임원 번호
     const user_seq_no = req.body.user_seq_no || ''; // 모임 번호
 
-    if (!hpno1.length || !hpno2.length || !token.length) {
+    if (!hpno1.length || !hpno2.length || !user_seq_no.length) {
         return res.status(400).json({error: 'Incorrenct param'});
     }
 
     var key = "temp_" + hpno1;
-    getRData(key, function(data) {
+    hgetRData("mng_group", hpno2, function(data) {
+        var groupData = {
+            "status": "N",
+            "user_seq_no": user_seq_no
+        };
+
+        var recvData = "";
+
         if (data) {
-            hgetRData("mng_group", hpno2, function(data) {
-                var groupData = {
-                    "status": "N",
-                    "user_seq_no": user_seq_no
-                };
-
-                var inputData = "";
-
-                if (data) {
-                    var recvData = JSON.parse(data);
-                    recvData.push(groupData);
-                    // groupData = JSON.stringify(data) + ", " + JSON.stringify(groupData);
-                }
-
-
-
-                hsetRdata("mng_group", hpno2, groupData);
-                res.status(200).json({result: "00"});
-            });
-
-            
+            console.log(data);
+            recvData = JSON.parse(data);
+            recvData.push(groupData);
         } else {
-            res.json({result: "01"});
+            recvData = groupData;
         }
+        console.log(recvData);
+        console.log(JSON.stringify(recvData));
+
+        hsetRdata("mng_group", hpno2, JSON.stringify(recvData));
+        res.status(200).json({result: "00"});
     });
-    
-    
 }
 
 exports.userme = (req, res) => {
