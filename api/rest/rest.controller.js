@@ -60,7 +60,7 @@ exports.invite = (req, res) => {
 
             var result = {
                 result: "00",
-                hpno: hpno,
+                code: key,
             }
             res.json(result);
         } else {
@@ -75,9 +75,11 @@ exports.check = (req, res) => {
     if (!code.length) return res.status(400).json({result: "09"}); // 클라이언트 코드 입력 안됨
     getRData(code, function(data) {
         if (!data) res.json({result: "01"}); // 초대 코드 만료
+        data = JSON.parse(data);
         var recvData = {
             result: "00",
-            hpno: data
+            hpno: data.hpno,
+            user_seq_no: data.user_seq_no
         }
         return res.json(recvData);
     });
