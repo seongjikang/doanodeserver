@@ -22,6 +22,16 @@ router.post('/invite/agree', restContoroller.agree);
 router.get('/group/:hpno', restContoroller.getMyGroup);
 
 
+// 계좌 상세
+router.get('/account/detail/:user_seq_no', restContoroller.getAccDetail);
+
+
+// 이체
+router.post('/transfer', restContoroller.transfer);
+
+
+
+// 환율
 
 
 module.exports = router;

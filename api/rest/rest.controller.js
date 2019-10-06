@@ -4,6 +4,7 @@ var quertyString = require('querystring');
 const redis = require('redis');
 const client = redis.createClient(6379, '127.0.0.1');
 const JSON = require('JSON');
+const async = require('async');
 
 const request = require('request');
 var moment = require('moment');
@@ -153,39 +154,60 @@ exports.getMyGroup = (req, res) => {
     if (!hpno) console.log("hpno is none");
 
     hgetRData("mng_group", hpno, function(data) {
-        if (!data) res.json({result: "09"});
+        if (!data) return res.json({result: "09"});
 
         data = JSON.parse(data);
-        // console.log(data + ", " + data.length);
+        // console.log(data[0].user_seq_no);
 
-        // for (var attr in data) console.log(attr);
-
-        for (var i = 0; i < data.length; i++) {
-            console.log(data[i].user_seq_no);
+        if (data.length > 0) {
+            hgetallRData("mng_group_info", function(result) {
+                var returnValue = "";
+                for (var i = 0; i < data.length; i++) {
+                    var no = data[i].user_seq_no;
+                    // if (result[no] != null) rrr += JSON.parse(result[no]);
+                    if (result[no] != null) returnValue += result[no];
+                }
+                res.json(returnValue);
+            });
+        } else {
+            res.json({result: "09"});
         }
-        res.json({result: "00"})
     });
 }
 
-function setSampleAccount() {
-    var sample = [
-        {
-            user_seq_no: "",
-            accountName: "테크랩5조 테스트1",
-            accountType: "모임통장",
-            accountNo: "3333-12-9373019",
-            koreaBalacne: "10000000",
-            foreignBalance: "5000"
-        },
-        {
-            user_seq_no: "",
-            accountName: "테크랩5조 테스트2",
-            accountType: "모임통장",
-            accountNo: "3333-18-4392043",
-            koreaBalacne: "10000000",
-            foreignBalance: "5000"
+/**
+ * 계좌 상세 
+ * METHOD: GET
+ * INPUT: user_seq_no
+ * OUTPUT: result, 상세리스트
+ */
+exports.getAccDetail = (req, res) => {
+    const user_no = req.params.user_seq_no;
+    if (!user_no) console.log("user_seq_no is none");
+
+    hgetRData("account_detail", user_no, function(data) {
+        if (data) {
+            var result = {
+                result: "00",
+                list: data
+            }
+
+            res.json(result);
+        } else {
+            res.json({result: "09"});
         }
-    ]
+    });
+}
+
+/**
+ * 이체 api
+ * 출금 후 입금이 동기처리가 되어야함
+ * METHOD: POST
+ * INPUT: 이체 데이터 Json
+ * OUTPUT: 결과값
+ */
+exports.transfer = (req, res) => {
+    
 }
 
 
@@ -323,6 +345,16 @@ function hgetRData(key, field, callback) {
     client.hget(key, field, function(err, obj) {
         if (err) console.log(err);
         // var res = JSON.parse(obj);
+        var res = obj;
+        callback(res);
+    });
+}
+
+// Redis JSON 데이터 get
+// Key를 요청하면 조건에 맞는 JSON Data를 Return
+function hgetallRData(key, callback) {
+    client.hgetall(key, function(err, obj){
+        if (err) console.log(err);
         var res = obj;
         callback(res);
     });
