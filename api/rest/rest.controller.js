@@ -108,10 +108,6 @@ exports.agree = (req, res) => {
     const hpno2 = req.body.hpno2 || ''; // 모임원 번호
     const user_seq_no = req.body.user_seq_no || ''; // 모임 번호
 
-    console.log("hpno1 = " + hpno1);
-    console.log("hpno2 = " + hpno2);
-    console.log("user_seq_no = " + user_seq_no);
-
     if (!hpno1.length || !hpno2.length || !user_seq_no.length) {
         return res.status(400).json({error: 'Incorrenct param'});
     }
@@ -160,13 +156,23 @@ exports.getMyGroup = (req, res) => {
         // console.log(data[0].user_seq_no);
 
         if (data.length > 0) {
-            hgetallRData("mng_group_info", function(result) {
-                var returnValue = "";
+            hgetallRData("mng_account_info", function(result) {
+                var returnValue = {
+                    result: "00",
+                    list: []
+                };
                 for (var i = 0; i < data.length; i++) {
                     var no = data[i].user_seq_no;
-                    // if (result[no] != null) rrr += JSON.parse(result[no]);
-                    if (result[no] != null) returnValue += result[no];
+                    if (result[no] != null) {
+                        var jsonData = JSON.parse(result[no]);
+                        if (jsonData.hasOwnProperty("acc_detail")) {
+                            jsonData.acc_detail = undefined;
+                        }
+                        returnValue.list.push(jsonData);
+                    }
+                    // console.log("["+i+"] " + returnValue.list);
                 }
+                console.log(returnValue);
                 res.json(returnValue);
             });
         } else {
@@ -185,7 +191,7 @@ exports.getAccDetail = (req, res) => {
     const user_no = req.params.user_seq_no;
     if (!user_no) console.log("user_seq_no is none");
 
-    hgetRData("account_detail", user_no, function(data) {
+    hgetRData("mng_account_info", user_no, function(data) {
         if (data) {
             var result = {
                 result: "00",
@@ -203,11 +209,55 @@ exports.getAccDetail = (req, res) => {
  * 이체 api
  * 출금 후 입금이 동기처리가 되어야함
  * METHOD: POST
- * INPUT: 이체 데이터 Json
+ * INPUT: 이체 데이터 Json(hpno, amount, sender_user_seq_no, receiver_user_seq_no, transfer_date)
  * OUTPUT: 결과값
  */
 exports.transfer = (req, res) => {
-    
+    const hpno = req.body.hpno || '';
+    const amount = req.body.amount || '';
+    const sender = req.body.sender_user_seq_no || '';
+    const receiver = req.body.receiver_user_seq_no || '';
+    const transfer_date = req.body.transfer_date || '';
+
+    if (!hpno.length || !amount.length || !sender.length || !receiver.length || !transfer_date.length) {
+        return res.status(400).json({error: 'Incorrenct param'});
+    } else {
+        console.log("hpno = " + hpno);
+        console.log("amount = " + amount);
+        console.log("sender = " + sender);
+        console.log("receiver = " + receiver);
+        console.log("transfer_date = " + transfer_date);
+    }
+
+    async.waterfall([
+        function(callback) {
+            console.log('1');
+            // callback(false, "");
+            hgetRData("account_detail", sender, function(data) {
+                console.log(data);
+                if (data) {
+                    console.log(data);
+                } else {
+                    res.json("data not found");
+                }
+            });
+        }, 
+        function(data1, data2, data3, callback) {
+            console.log('2');
+
+        },
+        function(callback) {
+            console.log('3');
+            callback(null);
+        }
+
+    ], function(err, data1, data2, data3) {
+        if (err) console.log("error = " + err);
+        console.log("data1 = " + data1);
+        console.log("data2 = " + data2);
+        console.log("data3 = " + data3);
+
+    });
 }
 
 
