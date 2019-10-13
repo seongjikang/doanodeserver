@@ -10,6 +10,19 @@ const request = require('request');
 var moment = require('moment');
 require('moment-timezone');
 
+class transferData {
+    constructor(t_type, a_type, s_no, r_no, amount, t_date, balance, memo) {
+        this.transfer_type = t_type;
+        this.amount_type = a_type;
+        this.sender = s_no,
+        this.receiver = r_no,
+        this.amount = amount,
+        this.date = t_date,
+        this.balance = balance,
+        this.memo = memo
+    }
+};
+
 exports.index = (req, res) => {
     req.accepts('application/json');
     var key, value;
@@ -215,51 +228,173 @@ exports.getAccDetail = (req, res) => {
 exports.transfer = (req, res) => {
     const hpno = req.body.hpno || '';
     const amount = req.body.amount || '';
+    const t_type = req.body.t_type || '';
+    const a_type = req.body.a_type || '';
     const sender = req.body.sender_user_seq_no || '';
     const receiver = req.body.receiver_user_seq_no || '';
     const transfer_date = req.body.transfer_date || '';
+    const memo = req.body.memo || '';
 
     if (!hpno.length || !amount.length || !sender.length || !receiver.length || !transfer_date.length) {
         return res.status(400).json({error: 'Incorrenct param'});
-    } else {
-        console.log("hpno = " + hpno);
-        console.log("amount = " + amount);
-        console.log("sender = " + sender);
-        console.log("receiver = " + receiver);
-        console.log("transfer_date = " + transfer_date);
     }
 
+    console.log("== TRANSFER API ==");
+    console.log("hpno = " + hpno);
+    console.log("amount = " + amount);
+    console.log("t_type = " + t_type);
+    console.log("a_type = " + a_type);
+    console.log("sender = " + sender);
+    console.log("receiver = " + receiver);
+    console.log("transfer_date = " + transfer_date);
+    console.log("memo = " + memo);
+    console.log("== TRANSFER API ==");
+
+    var returnValue = {
+        result: "00",
+        amount: "",
+        senderName: "",
+        senderNo: "",
+        receiverName: "",
+        receiverNo: ""
+    };
+
     async.waterfall([
+        // 먼저 출금계좌에서 돈을 출금
         function(callback) {
-            console.log('1');
-            // callback(false, "");
-            hgetRData("account_detail", sender, function(data) {
-                console.log(data);
+            hgetRData("mng_account_info", sender, function(data) {
                 if (data) {
-                    console.log(data);
+                    var jsonData = JSON.parse(data);
+                    var k_balance = jsonData.koreaBalance;
+                    var f_balance = jsonData.foreignBalance;
+
+                    var balance = 0;
+                    var other_balance = 0;
+                    if (t_type == "O") {   // 원화로 입출금
+                        if (parseInt(k_balance) < parseInt(amount)) res.json("08") // 출금 잔액 부족
+                        balance = parseInt(k_balance) - parseInt(amount);
+                    // } else if (t_type == "I") {
+                    //     balance = parseInt(k_balance) + parseInt(amount);
+                    } else if (t_type == "EK") {            // 원화 환전 -> 원화를 외화로
+                        if (parseInt(k_balance) < parseInt(amount)) res.json("08") // 출금 잔액 부족
+                        balance = parseInt(k_balance) - parseInt(amount);
+                        other_balance = parseInt(f_balance) + parseInt(amount);
+                    } else if (t_type == "EF") {            // 외화 환전 -> 외화를 원화로
+                        if (parseInt(f_balance) < parseInt(amount)) res.json("08") // 출금 잔액 부족
+                        balance = parseInt(f_balance) - parseInt(amount);
+                        other_balance = parseInt(k_balance) + parseInt(amount);
+                    }
+                    var tData = new transferData(t_type, a_type, sender, receiver, amount, transfer_date, balance, memo);
+
+                    transfer_process(1, tData, function(result, no, name) {
+                        console.log("first result = " + result);
+                        tData.balance = other_balance;
+                        returnValue.amount = amount;
+                        returnValue.senderNo = no;
+                        returnValue.senderName = name;
+                        callback(null, tData);
+                    });
                 } else {
-                    res.json("data not found");
+                    res.json("09"); // 출금계좌 못 찾음
                 }
             });
-        }, 
-        function(data1, data2, data3, callback) {
-            console.log('2');
-
         },
-        function(callback) {
-            console.log('3');
-            callback(null);
+
+        // 출금이 성공하면 입금하여 마무리
+        function(data, callback) {
+            console.log('>> tData = ' + JSON.stringify(data));
+            if (data.transfer_type == "O") {
+                data.transfer_type = "I";
+            } else if (data.transfer_type == "I") {
+                data.transfer_type = "O";
+            } else if (data.transfer_type = "EF") {
+                data.transfer_type = "EK";
+            } else if (data.transfer_type = "EK") {
+                data.transfer_type = "EF";
+            }
+
+            transfer_process(2, data, function(result, no, name) {
+                console.log("second result = " + result);
+                if (result == "00") {
+                    returnValue.result = "00";
+                    returnValue.receiverNo = no;
+                    returnValue.receiverName = name;
+                    res.json(returnValue);
+                } else {
+                    res.json({"result": "01"});
+                }
+            });
         }
-
-    ], function(err, data1, data2, data3) {
-        if (err) console.log("error = " + err);
-        console.log("data1 = " + data1);
-        console.log("data2 = " + data2);
-        console.log("data3 = " + data3);
-
-    });
+    ]);
 }
 
+/**
+ * 입출금 처리 함수
+ */
+function transfer_process(order, transfer_data, callback) {
+    var t_type = transfer_data.transfer_type;   // I: 입금, O: 출금, EF: 외화환전, EK: 원화환전
+    var a_type = transfer_data.amount_type;     // K: 원화, F: 외화
+    var s_no = transfer_data.sender;
+    var r_no = transfer_data.receiver;
+    var amount = transfer_data.amount;
+    var t_date = transfer_data.date;
+    var balance = transfer_data.balance;
+    var memo = transfer_data.memo;
+
+    var no = 0;
+    if (order == 1) {
+        no = s_no;
+        var transfer = {
+            transfer_type: t_type,
+            amount_type: a_type,
+            person: r_no,
+            amount: amount,
+            date: t_date,
+            memo: memo
+        };
+    } else if (order == 2) {
+        no = r_no;
+        var transfer = {
+            transfer_type: t_type,
+            amount_type: a_type,
+            person: s_no,
+            amount: amount,
+            date: t_date,
+            memo: memo
+        };
+    }
+
+    console.log("order = " + order);
+
+    hgetRData("mng_account_info", no, function(data) {
+        if (data) {
+            var jsonData = JSON.parse(data);
+            jsonData.acc_detail.push(transfer);
+
+            var k_balance = jsonData.koreaBalance;
+            var f_balance = jsonData.foreignBalance;
+
+            if (t_type == "I") {
+                if (a_type == "K") {
+                    jsonData.koreaBalance = parseInt(k_balance) + parseInt(amount);
+                } else if (a_type == "F") {
+                    jsonData.foreignBalance = parseInt(f_balance) + parseInt(amount);
+                }
+            } else if (t_type == "O") {
+                if (a_type == "K") {
+                    jsonData.koreaBalance = balance;
+                } else if (a_type == "F") {
+                    jsonData.foreignBalance = balance;
+                }
+            }
+
+            hsetRdata("mng_account_info", no, JSON.stringify(jsonData));
+            callback("00", jsonData.accountNo, jsonData.accountName);
+        } else {
+            callback("01");
+        }
+    });
+}
 
 exports.userme = (req, res) => {
     const user = parseInt(req.params.user, 10);
@@ -345,7 +480,7 @@ function getUserMe(access_token, user_seq_no, resp) {
 function getToken(token_code) {
     if (token_code != null) {
         var postHeader = {
-            "Content-Type": "application/x-www-form-urlencoded"
+            "transfer_data-Type": "application/x-www-form-urlencoded"
         }
         
         var postBody = 
