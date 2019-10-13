@@ -32,6 +32,6 @@ router.post('/transfer', restContoroller.transfer);
 
 
 // 환율
-
+router.get('/exchange/rate', restContoroller.eRate);
 
 module.exports = router;

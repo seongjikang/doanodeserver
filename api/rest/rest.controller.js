@@ -396,6 +396,36 @@ function transfer_process(order, transfer_data, callback) {
     });
 }
 
+exports.eRate = (req, res) => {
+    var url = "https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD";
+
+    var getHeader = {
+        // "Authorization": "Bearer " + access_token
+    }
+
+    var option = {
+        headers: getHeader
+        , url: url
+    }
+
+    request.get(option, function(err, response, body) {
+        if (err) console.log(err);
+        
+        var json_body = JSON.parse(body);
+        var data = json_body[0];
+        var returnValue = {
+            result: "00",
+            currencyCode: data.currencyCode,
+            date: data.date.replace( /-/gi, '') + data.time.replace( /:/gi, ''),
+            price: data.basePrice
+        };
+        console.log(returnValue);
+        res.json(returnValue);
+    });
+
+}
+
+
 exports.userme = (req, res) => {
     const user = parseInt(req.params.user, 10);
     if (!user) {
