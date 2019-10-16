@@ -10,18 +10,6 @@ const request = require('request');
 var moment = require('moment');
 require('moment-timezone');
 
-class transferData {
-    constructor(t_type, a_type, s_no, r_no, amount, t_date, balance, memo) {
-        this.transfer_type = t_type;
-        this.amount_type = a_type;
-        this.sender = s_no,
-        this.receiver = r_no,
-        this.amount = amount,
-        this.date = t_date,
-        this.balance = balance,
-        this.memo = memo
-    }
-};
 
 exports.index = (req, res) => {
     req.accepts('application/json');
@@ -218,6 +206,19 @@ exports.getAccDetail = (req, res) => {
     });
 }
 
+class transferData {
+    constructor(t_type, a_type, s_no, r_no, amount, balance, t_date, memo) {
+        this.transfer_type = t_type;
+        this.amount_type = a_type;
+        this.sender = s_no,
+        this.receiver = r_no,
+        this.amount = amount,
+        this.balance = balance,
+        this.date = t_date,
+        this.memo = memo
+    }
+};
+
 /**
  * 이체 api
  * 출금 후 입금이 동기처리가 되어야함
@@ -276,29 +277,42 @@ exports.transfer = (req, res) => {
                     var money = parseInt(amount);
                     var rate = parseInt(erate);
 
+                    // console.log("jsonData = " + JSON.stringify(jsonData));
+
                     var balance = 0;
                     var other_balance = 0;
                     if (t_type == "O") {   // 원화로 입출금
-                        if (k_balance < money) res.json("08") // 출금 잔액 부족
+                        if (k_balance < money) {
+                            res.json("08") // 출금 잔액 부족
+                            return;
+                        }
                         balance = k_balance - money;
+                        console.log("O balance = " + balance);
+                        other_amount = money;
                     } else if (t_type == "EK") {            // 원화 환전 -> 원화를 외화로
-                        if (k_balance < money) res.json("08") // 출금 잔액 부족
+                        if (k_balance < money) {
+                            res.json("08") // 출금 잔액 부족
+                            return;
+                        }
                         balance = k_balance - money;
                         other_amount = Math.round(money / rate);
                         other_balance = f_balance + other_amount;
                     } else if (t_type == "EF") {            // 외화 환전 -> 외화를 원화로
-                        if (f_balance < money) res.json("08") // 출금 잔액 부족
+                        if (f_balance < money) {
+                            res.json("08") // 출금 잔액 부족
+                            return;
+                        }
                         balance = f_balance - money;
                         other_amount = Math.round(money * rate);
                         other_balance = k_balance + other_amount;
                     }
-                    var tData = new transferData(t_type, a_type, sender, receiver, money, transfer_date, balance, memo);
+                    var tData = new transferData(t_type, a_type, sender, receiver, money, balance, transfer_date, memo);
 
                     transfer_process(1, tData, function(result, no, name) {
-                        console.log("first result = " + result);
+                        // console.log("first result = " + result);
 
                         tData.balance = other_balance;
-                        tData.amount = other_amount;
+                        tData.amount = money;
 
                         if (t_type == "EK") {
                             returnValue.amount = amount;
@@ -335,7 +349,7 @@ exports.transfer = (req, res) => {
             // console.log('>> cData = ' + JSON.stringify(data));
 
             transfer_process(2, data, function(result, no, name) {
-                console.log("second result = " + result);
+                // console.log("second result = " + result);
                 if (result == "00") {
                     returnValue.result = "00";
                     returnValue.receiverNo = no;
@@ -381,11 +395,14 @@ function transfer_process(order, transfer_data, callback) {
         
     }
 
+    // console.log("[" + order + "] " + JSON.stringify(transfer_data));
+
     var transfer = {
         transfer_type: t_type,
         amount_type: a_type,
         person: person,
         amount: amount,
+        balance: "",
         date: t_date,
         memo: memo
     };
@@ -395,31 +412,43 @@ function transfer_process(order, transfer_data, callback) {
     hgetRData("mng_account_info", no, function(data) {
         if (data) {
             var jsonData = JSON.parse(data);
-            jsonData.acc_detail.push(transfer);
 
             var k_balance = parseInt(jsonData.koreaBalance);
             var f_balance = parseInt(jsonData.foreignBalance);
 
+            // console.log("k_balance = " + k_balance);
+            // console.log("f_balance = " + f_balance);
+            // console.log("amount = " + amount);
+
             if (t_type == "I") {
                 if (a_type == "K") {
                     jsonData.koreaBalance = k_balance + amount;
+                    transfer.balance = jsonData.koreaBalance;
+                    console.log("transfer.balance = " + transfer.balance);
                 } else if (a_type == "F") {
                     jsonData.foreignBalance = f_balance + amount;
+                    transfer.balance = jsonData.foreignBalance;
                 }
             } else if (t_type == "O") {
                 if (a_type == "K") {
-                    jsonData.koreaBalance = balance;
+                    // console.log("O K ");
+                    jsonData.koreaBalance = k_balance - amount;
+                    transfer.balance = jsonData.koreaBalance;
                 } else if (a_type == "F") {
-                    jsonData.foreignBalance = balance;
+                    // console.log("O F ");
+                    jsonData.foreignBalance = f_balance - amount;
+                    jsonData.balance = jsonData.foreignBalance;
                 }
             } else {
                 if (a_type == "K") {
                     jsonData.koreaBalance = balance;
+                    transfer.balance = jsonData.koreaBalance;
                 } else if (a_type == "F") {
                     jsonData.foreignBalance = balance;
+                    transfer.balance = jsonData.foreignBalance;
                 }
             }
-
+            jsonData.acc_detail.push(transfer);
             hsetRdata("mng_account_info", no, JSON.stringify(jsonData));
             callback("00", jsonData.accountNo, jsonData.accountName);
         } else {
