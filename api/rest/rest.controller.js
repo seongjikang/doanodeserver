@@ -241,7 +241,7 @@ exports.transfer = (req, res) => {
         return res.status(400).json({error: 'Incorrenct param'});
     }
 
-    if (t_type == "EF" || t_type == "EK") {
+    if (t_type == "EFO" || t_type == "EKO") {
         if (erate == "") res.json({error: 'Incorrenct param'});
     }
 
@@ -289,7 +289,8 @@ exports.transfer = (req, res) => {
                         balance = k_balance - money;
                         console.log("O balance = " + balance);
                         other_amount = money;
-                    } else if (t_type == "EK") {            // 원화 환전 -> 원화를 외화로
+                    } else if (t_type == "EKO") {            // 원화 환전 -> 원화를 외화로
+                        console.log("1111111");
                         if (k_balance < money) {
                             res.json("08") // 출금 잔액 부족
                             return;
@@ -297,7 +298,8 @@ exports.transfer = (req, res) => {
                         balance = k_balance - money;
                         other_amount = Math.round(money / rate);
                         other_balance = f_balance + other_amount;
-                    } else if (t_type == "EF") {            // 외화 환전 -> 외화를 원화로
+                    } else if (t_type == "EFO") {            // 외화 환전 -> 외화를 원화로
+                        console.log("2222222");
                         if (f_balance < money) {
                             res.json("08") // 출금 잔액 부족
                             return;
@@ -307,6 +309,7 @@ exports.transfer = (req, res) => {
                         other_balance = k_balance + other_amount;
                     }
                     var tData = new transferData(t_type, a_type, sender, receiver, money, balance, transfer_date, memo);
+                    console.log("[1] " + JSON.stringify(tData));
 
                     transfer_process(1, tData, function(result, no, name) {
                         // console.log("first result = " + result);
@@ -314,9 +317,9 @@ exports.transfer = (req, res) => {
                         tData.balance = other_balance;
                         tData.amount = money;
 
-                        if (t_type == "EK") {
+                        if (t_type == "EKO") {
                             returnValue.amount = amount;
-                        } else if (t_type == "EF") {
+                        } else if (t_type == "EFO") {
                             returnValue.amount = amount;
                         } else {
                             returnValue.amount = amount;    
@@ -338,16 +341,18 @@ exports.transfer = (req, res) => {
                 data.transfer_type = "I";
             } else if (data.transfer_type == "I") {
                 data.transfer_type = "O";
-            } else if (data.transfer_type == "EF") {
-                data.transfer_type = "EK";
+            } else if (data.transfer_type == "EFO") {
+                data.transfer_type = "EKI";
                 data.amount_type = "K";
-            } else if (data.transfer_type == "EK") {
-                data.transfer_type = "EF";
+                data.amount = other_amount;
+            } else if (data.transfer_type == "EKO") {
+                data.transfer_type = "EFI";
                 data.amount_type = "F";
+                data.amount = other_amount;
             }
 
             // console.log('>> cData = ' + JSON.stringify(data));
-
+            console.log("[2] " + JSON.stringify(data));
             transfer_process(2, data, function(result, no, name) {
                 // console.log("second result = " + result);
                 if (result == "00") {
@@ -380,22 +385,21 @@ function transfer_process(order, transfer_data, callback) {
     var person;
     if (order == 1) {
         no = s_no;
-        if (t_type == "EK" || t_type == "EF") {
+        if (t_type == "EKO" || t_type == "EFO") {
             person = s_no;
         } else {
             person = r_no;
         }
     } else if (order == 2) {
         person = s_no;
-        if (t_type == "EK" || t_type == "EF") {
+        if (t_type == "EKI" || t_type == "EFI") {
             no = s_no;
         } else {
             no = r_no;
         }
-        
     }
 
-    // console.log("[" + order + "] " + JSON.stringify(transfer_data));
+    console.log("[" + order + "] " + JSON.stringify(transfer_data));
 
     var transfer = {
         transfer_type: t_type,
@@ -441,9 +445,11 @@ function transfer_process(order, transfer_data, callback) {
                 }
             } else {
                 if (a_type == "K") {
+                    // console.log("E K ");
                     jsonData.koreaBalance = balance;
                     transfer.balance = jsonData.koreaBalance;
                 } else if (a_type == "F") {
+                    // console.log("E F ");
                     jsonData.foreignBalance = balance;
                     transfer.balance = jsonData.foreignBalance;
                 }

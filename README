@@ -35,14 +35,17 @@ REDIS KEY 정리
 
 
 - 백업용 쿼리
-hset mng_group 01063137806 '[{"status":"M", "user_seq_no":"1100035285"}]'
-hset mng_group 01054103368 '[{"status":"M", "user_seq_no":"1100035094"}]'
+hset mng_group 01063137806 '[{"status":"M", "user_seq_no":"1100090002"}, {"status":"M", "user_seq_no":"1100035285"}]'
+hset mng_group 01054103368 '[{"status":"M", "user_seq_no":"1100090001"}, {"status":"M", "user_seq_no":"1100035094"}]'
 
 hset mng_access_token 01063137806 "{\"access_token\":\"749f7a05-cbd2-42c4-a58c-82cb103b5822\",\"token_type\":\"Bearer\",\"expires_in\":7776000,\"refresh_token\":\"127f6454-56cb-4728-b6f0-26640f6aa124\",\"scope\":\"login transfer inquiry\",\"user_seq_no\":\"1100035285\"}"
 hset mng_access_token 01054103368 "{\"access_token\":\"9f839a33-8699-4864-83c9-b6d4f2eb2c5c\",\"token_type\":\"Bearer\",\"expires_in\":7776000,\"refresh_token\":\"8422e794-81aa-473b-a8d5-40c6dccce633\",\"scope\":\"login transfer inquiry\",\"user_seq_no\":\"1100035094\"}"
 
-hset mng_account_info 1100035094 '{"user_seq_no": "1100035094","accountName": "TechLab5 Test01","accountType": "Group Account","accountNo": "3333-12-9373019","koreaBalance": 10000,"foreignBalance": 5000,"acc_detail":[]}'
-hset mng_account_info 1100035285 '{"user_seq_no": "1100035285","accountName": "TechLab5 Test02","accountType": "Group Account","accountNo": "3333-18-4392043","koreaBalance": 10000,"foreignBalance": 1700,"acc_detail":[]}'
+hset mng_account_info 1100035094 '{"user_seq_no": "1100035094","accountName": "여행가고싶어","accountType": "Group Account","accountNo": "3333-12-9373019","koreaBalance": 100000,"foreignBalance": 10000,"acc_detail":[]}'
+hset mng_account_info 1100090001 '{"user_seq_no": "1100090001","accountName": "입출금통장","accountType": "Normal","accountNo": "3333-12-1234567","koreaBalance": 1000000,"foreignBalance": 0, "acc_detail":[]}'
+
+hset mng_account_info 1100035285 '{"user_seq_no": "1100035285","accountName": "미국여행가자","accountType": "Group Account","accountNo": "3333-18-4392043","koreaBalance": 100000,"foreignBalance": 10000,"acc_detail":[]}'
+hset mng_account_info 1100090002 '{"user_seq_no": "1100090002","accountName": "나의 입출금","accountType": "Normal","accountNo": "3333-12-7654321","koreaBalance": 2000000,"foreignBalance": 0, "acc_detail":[]}'
 
 transfer_type: I: 입금, O: 출금, TK: 원화로 환전, TF: 외화로 환전
 // hset account_detail 1100035094 '[{"transfer_type":"I","amount_type":"K","person":"최승민","amount":"5000","date":"20191001141414","memo":""}]'
