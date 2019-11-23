@@ -1,19 +1,48 @@
-const client_id = "l7xxc4de3ee74d78468f8bd73a4c92cd96e6";
-const client_secret = "29665ccaf40b46c79450a7b2ba29a94b";
-const redirect_url = "http://10.25.143.72:3000/rest/callback";
+// Shinhan Hackathon
+const bank_url = "http://10.3.17.61:8080";
+const card_url = "http://10.3.17.61:8081";
+const invest_url = "http://10.3.17.61:8082";
+const life_url = "http://10.3.17.61:8083";
 
-// OPEN BANKING URL
-const ob_url = "https://testapi.open-platform.or.kr";
-const ob_url2 = "https://testapi.openbanking.or.kr";
-const api_user = "/user/me";
-const api_get_token = "/oauth/2.0/token";
+exports.bank_url = bank_url;
+exports.card_url = card_url;
+exports.invest_url = invest_url;
+exports.life_url = life_url;
 
+module.exports.printApiLog = function(direction, apiName, status) {
+    var dir = "";
+    switch (direction) {
+        case 1:
+            dir = "[APP -> DOA] " 
+            break;
+        case 2:
+            dir = "[DOA -> Shinhan] " 
+            break;
+        case 3:
+            dir = "[Shinahn -> DOA] " 
+            break;
+        case 4:
+            dir = "[DOA -> APP] " 
+            break;
+    }
 
-exports.client_id = client_id;
-exports.client_secret = client_secret;
-exports.redirect_url = redirect_url;
+    apiName = "[API : " + apiName + "] "
 
-exports.ob_url = ob_url;
-exports.ob_url2 = ob_url2;
-exports.user = api_user;
-exports.getToken = api_get_token;
+    var stat = "";
+    switch (status) {
+        case 1:
+            stat = "[성공]"
+            break
+        case 2:
+            stat = "[실패]"
+            break  
+
+    }
+    console.log(dir + apiName + stat);
+}
+
+module.exports.printDataLog = function(message) {
+    console.log("-------------------------------- RESPONSE DATA --------------------------------");
+    console.log(message);
+    console.log("-------------------------------- RESPONSE DATA --------------------------------");
+}
