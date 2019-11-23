@@ -39,6 +39,7 @@ module.exports.printApiLog = function(direction, apiName, status) {
 
     }
     console.log(dir + apiName + stat);
+    if (direction == 4) console.log("\n");
 }
 
 module.exports.printDataLog = function(message) {

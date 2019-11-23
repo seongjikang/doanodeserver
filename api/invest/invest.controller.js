@@ -147,16 +147,31 @@ function dataMerge(hpno, data1, data2, callback) {
             if (i == 0 || i == 3||i == 5||i == 6){
                 if(i == 0){
                     var news = data2.dataBody.list[8].news_titl;
-                }else {
-                    news = data2.dataBody.list[i].news_titl;
+                    var showname = data1.dataBody.list[i].stbd_nm;
+                    var isdeduct = 0;
+                }else if ( i == 3){
+                    showname = "피델리티 재팬 펀드";
+                    news = "일본시장 불매운동으로 인한 급락";
+                    isdeduct = 2;
                 }
-                var isdeduct = 1;
+                else {
+                    news = data2.dataBody.list[i].news_titl;
+                    showname = data1.dataBody.list[i].stbd_nm,
+                    isdeduct = 0;
+                }
             }else {
-                isdeduct = 0;
-                news = data2.dataBody.list[i].news_titl;
+                if(i == 1){
+                    showname = "주식회사 술펀";
+                    news = "세상에 없던 전통주, 가장 먼저 만나다"
+                    isdeduct = 1;
+                }else{
+                    showname = data1.dataBody.list[i].stbd_nm,
+                    isdeduct = 0;
+                    news = data2.dataBody.list[i].news_titl;
+                }   
             }
             var recvData = {
-                name: data1.dataBody.list[i].stbd_nm,
+                name: showname,
                 shrt_code: data1.dataBody.list[i].rdcn_code,
                 evlt_amt: data1.dataBody.list[i].evlt_amt,
                 buy_amt: data1.dataBody.list[i].buy_amt,

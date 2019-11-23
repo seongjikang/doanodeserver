@@ -608,9 +608,9 @@ function maindataMerge(hpno, checkcard_data, creditcard_data, insurance_data, in
                     "checkCardTotalAmount": "3056163",
                     "creditCardTotalAmount": "6694500",
                     "cashTotalAmount": "1762672",
-                    "cultureTotalAmount": "189500",
+                    "cultureTotalAmount": "689500",
                     "publicTransferTotalAmount" : "379500",
-                    "deductInsuranceTotalAmount" : sumInpFe,//보장성 보험 납입금액
+                    "deductInsuranceTotalAmount" : "1500000",//보장성 보험 납입금액
                     "fundTotalAmount" : "4550000",//펀드
                     "investTotalAmount" : sumInvest,//주식
                     "yumTotalAmount" : yunSum,//연금저축,

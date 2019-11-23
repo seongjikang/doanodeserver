@@ -135,7 +135,7 @@ function dataMergeCulture(hpno, successcd, callback) {
                     "customerName": data,
                     "phoneNumber": hpno,
                     "totalcnt": "20",
-			        "totalamount": "189500",
+			        "totalamount": "689500",
                     "traditionalList": [
                         {   "month": "1",
 	                "cnt": "5",
